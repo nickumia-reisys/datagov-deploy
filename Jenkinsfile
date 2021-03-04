@@ -2,7 +2,12 @@ pipeline {
   agent any
   stages {
     stage('workflow:sandbox') {
-      when { anyOf { environment name: 'DATAGOV_WORKFLOW', value: 'sandbox' } }
+      when {
+        allOf {
+          environment name: 'DATAGOV_WORKFLOW', value: 'sandbox'
+          anyOf { branch 'develop' }
+        }
+      }
       stages {
         stage('build') {
           steps {
@@ -15,7 +20,6 @@ pipeline {
           }
         }
         stage('deploy:sandbox') {
-          when { anyOf { branch 'develop' } }
           environment {
             ANSIBLE_VAULT_FILE = credentials('ansible-vault-secret')
             SSH_KEY_FILE = credentials('datagov-sandbox')
@@ -23,14 +27,21 @@ pipeline {
           steps {
             ansiColor('xterm') {
               sh 'bin/jenkins-deploy ping sandbox'
-              sh 'bin/jenkins-deploy deploy sandbox site.yml'
             }
           }
         }
       }
     }
     stage('workflow:production') {
-      when { anyOf { environment name: 'DATAGOV_WORKFLOW', value: 'production' } }
+      when {
+        allOf {
+          environment name: 'DATAGOV_WORKFLOW', value: 'production'
+          anyOf {
+            branch 'master'
+            branch 'release/*'
+          }
+        }
+      }
       stages {
         stage('build') {
           steps {
@@ -99,7 +110,6 @@ pipeline {
   }
   post {
     always {
-      step([$class: 'GitHubIssueNotifier', issueAppend: true])
       cleanWs()
     }
   }
