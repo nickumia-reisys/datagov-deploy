@@ -77,7 +77,7 @@
 
 
 - name: Service-level smoke tests
-  hosts: inventory-web:!inventory-next
+  hosts: inventory-next
   tags:
     - smoke
   tasks:
